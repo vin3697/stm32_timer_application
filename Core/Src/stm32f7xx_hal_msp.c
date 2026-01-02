@@ -19,7 +19,7 @@
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
-#include "main.h"
+#include "global_header_file.h"
 /* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */

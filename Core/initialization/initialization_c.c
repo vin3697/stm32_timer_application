@@ -52,6 +52,9 @@ void initialization()
 	  MX_ADC1_Init();
 	  /* USER CODE BEGIN 2 */
 
+
+	  HAL_ADC_Start(&hadc1);   // ADC init
+
 	  /* USER CODE END 2 */
 
 	return;
