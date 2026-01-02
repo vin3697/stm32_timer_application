@@ -18,6 +18,7 @@
 
 ADC_HandleTypeDef 	hadc1;
 UART_HandleTypeDef 	huart3;
+TIM_HandleTypeDef 	htim2;
 
 void initialization()
 {
