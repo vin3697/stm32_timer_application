@@ -16,6 +16,8 @@
 	extern TIM_HandleTypeDef 	htim3;
 	extern UART_HandleTypeDef 	huart3;
 
+	// global visibility
+	extern global_system_t		global_system;
 
 
 #endif /* INC_GLOABAL_HEADER_FILE_H_ */
