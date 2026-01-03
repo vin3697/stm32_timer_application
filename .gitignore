@@ -1,0 +1,4 @@
+# Ignores the entire folders 
+.settings/
+Debug/
+Drivers/

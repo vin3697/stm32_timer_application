@@ -31,7 +31,8 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/gloabal_header_file.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim_ex.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart.h \
  ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h \
- ../Core/initialization/init_header_file.h
+ ../Core/initialization/init_header_file.h \
+ ../Core/algorithm/algorithm_header.h
 ../Core/Inc/gloabal_header_file.h:
 ../Core/Inc/main.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h:
@@ -67,3 +68,4 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/gloabal_header_file.h \
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart.h:
 ../Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h:
 ../Core/initialization/init_header_file.h:
+../Core/algorithm/algorithm_header.h:

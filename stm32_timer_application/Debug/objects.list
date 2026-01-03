@@ -5,6 +5,7 @@
 "./Core/Src/sysmem.o"
 "./Core/Src/system_stm32f7xx.o"
 "./Core/Startup/startup_stm32f746zgtx.o"
+"./Core/algorithm/algorithm_c.o"
 "./Core/initialization/init_c_file.o"
 "./Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal.o"
 "./Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_adc.o"

@@ -10,6 +10,7 @@
 
 	#include "main.h"
 	#include "init_header_file.h"
+	#include "algorithm_header.h"
 
 	extern ADC_HandleTypeDef 	hadc1;
 	extern TIM_HandleTypeDef 	htim3;
