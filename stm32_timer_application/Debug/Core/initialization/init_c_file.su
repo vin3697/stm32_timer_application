@@ -1,8 +1,0 @@
-../Core/initialization/init_c_file.c:23:6:initialization	8	static
-../Core/initialization/init_c_file.c:43:6:SystemClock_Config	88	static
-../Core/initialization/init_c_file.c:93:6:MX_ADC1_Init	24	static
-../Core/initialization/init_c_file.c:145:6:MX_TIM3_Init	40	static
-../Core/initialization/init_c_file.c:190:6:MX_USART3_UART_Init	8	static
-../Core/initialization/init_c_file.c:225:6:MX_GPIO_Init	56	static
-../Core/initialization/init_c_file.c:348:6:MPU_Config	24	static
-../Core/initialization/init_c_file.c:379:6:Error_Handler	4	static,ignoring_inline_asm
