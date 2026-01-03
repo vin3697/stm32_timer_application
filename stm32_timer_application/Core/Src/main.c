@@ -7,6 +7,7 @@
 
 #include "gloabal_header_file.h"
 
+uint8_t g_debug_variable	= 0;
 
 int main(void)
 {
@@ -32,17 +33,13 @@ int main(void)
 
 	  system_mode_operation(&global_system);
 
+	  system_execution(&global_system);
 
-	  HAL_GPIO_WritePin(global_system.led.pin_base	, global_system.led.pin_number, global_system.led.pin_state);
-
-	  HAL_UART_Transmit(&huart3,
-			  	  	  	(uint8_t *)(&global_system.potentiometer.u8_percentage_value),
-			  	  	  	sizeof(global_system.potentiometer.u8_percentage_value),
-						100);
-
-	  HAL_Delay(100);
+	  send_info_on_bus(&global_system);
 
 	  global_system.last_cycle_mode	= global_system.current_cycle_mode;
+
+	  HAL_Delay(100);
 
 
   }

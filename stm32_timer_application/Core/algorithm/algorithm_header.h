@@ -46,6 +46,22 @@
 
 	}motor_rotation_direction_t;
 
+	typedef struct
+	{
+		GPIO_TypeDef* 	pin_base;
+
+		uint16_t 		pin_in1;
+		GPIO_PinState	pin_in1_state;
+		uint16_t 		pin_in2;
+		GPIO_PinState	pin_in2_state;
+		uint16_t 		pin_in3;
+		GPIO_PinState	pin_in3_state;
+		uint16_t 		pin_in4;
+		GPIO_PinState	pin_in4_state;
+
+
+	}stepper_motor_t;
+
 	// global structure for system
 	typedef struct
 	{
@@ -58,6 +74,8 @@
 		led_operations_t	led;
 		motor_rotation_direction_t	motor_rotation_direction;
 
+		stepper_motor_t		stepper_motor;
+
 	}global_system_t;
 
 
@@ -69,8 +87,14 @@
 	void system_mode_selection(global_system_t *const arg_global_system);
 	void system_mode_operation(global_system_t *const arg_global_system);
 	void change_in_mode(global_system_t *const arg_global_system);
-
 	void work_mode_operation(global_system_t *const arg_global_system);
+	void system_execution(global_system_t *const arg_global_system);
+	void clockwise_movement(global_system_t *const arg_global_system);
+	void anitclockwise_movement(global_system_t *const arg_global_system);
+	void energize_pins( global_system_t *const arg_global_system);
+	void stepper_motor_sequence(uint8_t u8_arg_step_id, global_system_t *const arg_global_system);
+	void send_info_on_bus( global_system_t *const arg_global_system);
+
 
 
 

@@ -33,6 +33,16 @@ void system_init(global_system_t *const arg_global_system)
 	arg_global_system->potentiometer.u32_analog_value		= 0;
 	arg_global_system->potentiometer.u8_percentage_value	= 0;
 
+	arg_global_system->stepper_motor.pin_base		= GPIOF;
+	arg_global_system->stepper_motor.pin_in1		= GPIO_PIN_0;
+	arg_global_system->stepper_motor.pin_in2		= GPIO_PIN_1;
+	arg_global_system->stepper_motor.pin_in3		= GPIO_PIN_2;
+	arg_global_system->stepper_motor.pin_in4		= GPIO_PIN_3;
+
+	arg_global_system->stepper_motor.pin_in1_state	= GPIO_PIN_RESET;
+	arg_global_system->stepper_motor.pin_in2_state	= GPIO_PIN_RESET;
+	arg_global_system->stepper_motor.pin_in3_state	= GPIO_PIN_RESET;
+	arg_global_system->stepper_motor.pin_in4_state	= GPIO_PIN_RESET;
 
 	return;
 }
@@ -76,7 +86,7 @@ void system_mode_selection(global_system_t *const arg_global_system)
 	{
 		arg_global_system->system_mode	= error_mode;
 	}
-	else if( u8_system_mode_value >= inactive_mode_threshold  )
+	else if( u8_system_mode_value <= inactive_mode_threshold  )
 	{
 		arg_global_system->system_mode	= inactive_mode;
 	}
@@ -90,40 +100,170 @@ void system_mode_selection(global_system_t *const arg_global_system)
 
 // -----------------------------------------------------------------------
 
-
-
-
-void work_mode_operation(global_system_t *const arg_global_system)
+void send_info_on_bus( global_system_t *const arg_global_system)
 {
 
-	uint8_t u8_system_mode_value	= 0;
-	u8_system_mode_value			= arg_global_system->potentiometer.u8_percentage_value;
+	  HAL_UART_Transmit(&huart3,
+			  	  	  	(uint8_t *)(&arg_global_system->potentiometer.u8_percentage_value),
+			  	  	  	sizeof(arg_global_system->potentiometer.u8_percentage_value),
+						100);
+	return;
+}
 
-	arg_global_system->led.pin_base		=	GPIOB;
-	arg_global_system->led.pin_number	=	LD1_Pin;
-	arg_global_system->led.pin_state	=	GPIO_PIN_SET;
+void energize_pins( global_system_t *const arg_global_system)
+{
 
-	const uint8_t clockwise_min_threshold	= 30;
-	const uint8_t clockwise_max_threshold	= 40;
+	HAL_GPIO_WritePin(	arg_global_system->stepper_motor.pin_base	,
+						arg_global_system->stepper_motor.pin_in1	,
+						arg_global_system->stepper_motor.pin_in1_state);
 
-	const uint8_t anticlockwise_min_threshold	= 60;
-	const uint8_t anticlockwise_max_threshold	= 70;
+	HAL_GPIO_WritePin(	arg_global_system->stepper_motor.pin_base	,
+						arg_global_system->stepper_motor.pin_in2	,
+						arg_global_system->stepper_motor.pin_in2_state);
 
-	if( ( clockwise_min_threshold <= u8_system_mode_value ) && ( u8_system_mode_value <= clockwise_max_threshold))
-	{
-		arg_global_system->motor_rotation_direction	=	clock_wise_rotation;
-	}
-	else if( ( anticlockwise_min_threshold <= u8_system_mode_value ) && ( u8_system_mode_value <= anticlockwise_max_threshold))
-	{
-		arg_global_system->motor_rotation_direction	=	anticlock_wise_rotatin;
+	HAL_GPIO_WritePin(	arg_global_system->stepper_motor.pin_base	,
+						arg_global_system->stepper_motor.pin_in3	,
+						arg_global_system->stepper_motor.pin_in3_state);
 
-	}
-	else{
-		// do nothing
-	}
+	HAL_GPIO_WritePin(	arg_global_system->stepper_motor.pin_base	,
+						arg_global_system->stepper_motor.pin_in4	,
+						arg_global_system->stepper_motor.pin_in4_state);
+
 
 }
 
+
+void stepper_motor_sequence(uint8_t u8_arg_step_id, global_system_t *const arg_global_system)
+{
+
+
+	arg_global_system->stepper_motor.pin_in1_state	= GPIO_PIN_RESET;
+	arg_global_system->stepper_motor.pin_in2_state	= GPIO_PIN_RESET;
+	arg_global_system->stepper_motor.pin_in3_state	= GPIO_PIN_RESET;
+	arg_global_system->stepper_motor.pin_in4_state	= GPIO_PIN_RESET;
+
+	 switch (u8_arg_step_id)
+	    {
+	        case 0U: /* 1000 */
+	        	arg_global_system->stepper_motor.pin_in1_state	= GPIO_PIN_SET;
+	            break;
+
+	        case 1U: /* 1100 */
+	        	arg_global_system->stepper_motor.pin_in1_state	= GPIO_PIN_SET;
+	        	arg_global_system->stepper_motor.pin_in2_state	= GPIO_PIN_SET;
+	            break;
+
+	        case 2U: /* 0100 */
+	        	arg_global_system->stepper_motor.pin_in2_state	= GPIO_PIN_SET;
+	            break;
+
+	        case 3U: /* 0110 */
+	        	arg_global_system->stepper_motor.pin_in2_state	= GPIO_PIN_SET;
+	        	arg_global_system->stepper_motor.pin_in3_state	= GPIO_PIN_SET;
+	        	break;
+
+	        case 4U: /* 0010 */
+	        	arg_global_system->stepper_motor.pin_in3_state	= GPIO_PIN_SET;
+	            break;
+
+	        case 5U: /* 0011 */
+	        	arg_global_system->stepper_motor.pin_in3_state	= GPIO_PIN_SET;
+	        	arg_global_system->stepper_motor.pin_in4_state	= GPIO_PIN_SET;
+	        	break;
+
+	        case 6U: /* 0001 */
+	        	arg_global_system->stepper_motor.pin_in4_state	= GPIO_PIN_SET;
+	            break;
+
+	        case 7U: /* 1001 */
+	        	arg_global_system->stepper_motor.pin_in1_state	= GPIO_PIN_SET;
+	        	arg_global_system->stepper_motor.pin_in4_state	= GPIO_PIN_SET;
+	            break;
+
+	        default:
+	            /* Invalid index -> all outputs off */
+	            break;
+	    }
+
+	 energize_pins(arg_global_system);
+
+	 return;
+}
+
+
+
+void anitclockwise_movement(global_system_t *const arg_global_system)
+{
+
+
+    uint8_t u8_step = 0;
+
+    for (u8_step = 0U; u8_step < 8U; u8_step++)
+    {
+
+    	stepper_motor_sequence(u8_step, arg_global_system);
+    	HAL_Delay(10);
+
+    }
+
+    return;
+}
+
+void clockwise_movement(global_system_t *const arg_global_system)
+{
+
+
+    uint8_t u8_step_id = 0;
+
+    for (u8_step_id = 0U; u8_step_id < 8U; u8_step_id++)
+    {
+        uint8_t u8_step = 0;
+        u8_step			= 7 - u8_step_id;
+
+    	stepper_motor_sequence(u8_step, arg_global_system);
+    	HAL_Delay(10);
+
+    }
+
+    return;
+}
+
+void system_execution(global_system_t *const arg_global_system)
+{
+
+
+	switch(arg_global_system->motor_rotation_direction)
+	{
+		case clock_wise_rotation:
+		{
+
+			clockwise_movement(arg_global_system);
+
+			break;
+		}
+
+		case anticlock_wise_rotatin:
+		{
+			anitclockwise_movement(arg_global_system);
+			break;
+		}
+
+		default: // motor_inactive
+			// as of now do nothing
+			arg_global_system->stepper_motor.pin_in1_state	= GPIO_PIN_RESET;
+			arg_global_system->stepper_motor.pin_in2_state	= GPIO_PIN_RESET;
+			arg_global_system->stepper_motor.pin_in3_state	= GPIO_PIN_RESET;
+			arg_global_system->stepper_motor.pin_in4_state	= GPIO_PIN_RESET;
+			energize_pins(arg_global_system);
+
+			break;
+	}
+
+	// set LED according to the Mode
+	HAL_GPIO_WritePin(arg_global_system->led.pin_base	, arg_global_system->led.pin_number, arg_global_system->led.pin_state);
+
+	return;
+}
 
 
 
@@ -146,6 +286,42 @@ void change_in_mode(global_system_t *const arg_global_system)
 }
 
 
+
+void work_mode_operation(global_system_t *const arg_global_system)
+{
+
+	uint8_t u8_system_mode_value	= 0;
+	u8_system_mode_value			= arg_global_system->potentiometer.u8_percentage_value;
+
+	arg_global_system->led.pin_base		=	GPIOB;
+	arg_global_system->led.pin_number	=	LD1_Pin;
+	arg_global_system->led.pin_state	=	GPIO_PIN_SET;
+
+	const uint8_t clockwise_min_threshold	= 30;
+	const uint8_t clockwise_max_threshold	= 40;
+
+	const uint8_t anticlockwise_min_threshold	= 60;
+	const uint8_t anticlockwise_max_threshold	= 70;
+
+	if( ( clockwise_min_threshold <= u8_system_mode_value ) && ( u8_system_mode_value <= clockwise_max_threshold))
+	{
+		arg_global_system->motor_rotation_direction	=	clock_wise_rotation;
+
+		g_debug_variable	= 33;
+
+	}
+	else if( ( anticlockwise_min_threshold <= u8_system_mode_value ) && ( u8_system_mode_value <= anticlockwise_max_threshold))
+	{
+		arg_global_system->motor_rotation_direction	=	anticlock_wise_rotatin;
+		g_debug_variable	= 66;
+
+	}
+	else{
+		arg_global_system->motor_rotation_direction	= motor_inactive;
+		g_debug_variable	= 99;
+	}
+
+}
 
 void system_mode_operation(global_system_t *const arg_global_system)
 {
