@@ -97,10 +97,7 @@
 	void energize_pins( global_system_t *const arg_global_system);
 	void stepper_motor_sequence(uint8_t u8_arg_step_id, global_system_t *const arg_global_system);
 	void send_info_on_bus( global_system_t *const arg_global_system);
-	void reset_cycle_count(global_system_t *const arg_global_system);
 	void increment_cycle_count(global_system_t *const arg_global_system);
-	void uC_cycle_time_op(global_system_t *const arg_global_system);
-	void uC_timing_operations(global_system_t *const arg_global_system);
 
 
 

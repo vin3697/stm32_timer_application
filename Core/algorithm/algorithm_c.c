@@ -105,12 +105,15 @@ void system_mode_selection(global_system_t *const arg_global_system)
 
 void send_info_on_bus( global_system_t *const arg_global_system)
 {
-
-
-	  HAL_UART_Transmit(&huart3,
+	const uint8_t tx_uart	= 3;
+	HAL_UART_Transmit(&huart3,
+				  	  (uint8_t *)(&tx_uart),
+					  sizeof(tx_uart),
+					  100);
+	  /*HAL_UART_Transmit(&huart3,
 			  	  	  	(uint8_t *)(&arg_global_system->potentiometer.u8_percentage_value),
 			  	  	  	sizeof(arg_global_system->potentiometer.u8_percentage_value),
-						100);
+						100);*/
 	return;
 }
 
@@ -376,67 +379,13 @@ void increment_cycle_count(global_system_t *const arg_global_system)
 }
 
 
-void reset_cycle_count(global_system_t *const arg_global_system)
-{
-	arg_global_system->u8_system_cycle_time	= 0;
-
-	return;
-}
-
-void uC_cycle_time_op(global_system_t *const arg_global_system)
-{
-	  static uint8_t u8_s_cyc_cnt 	=	0; // remembers value
-	  const uint16_t uc_cycle_time	=  	10*3;
-
-
-	  // -------------------------------------------
-	  /* 1ms tick */
-	  u8_s_cyc_cnt++;
-	  increment_cycle_count(arg_global_system);
-	  /* every 10ms trigger main task */
-	  if (u8_s_cyc_cnt >= uc_cycle_time) // 10*2ms
-	  {
-
-		  u8_s_cyc_cnt = 0;
-		  reset_cycle_count(arg_global_system);
-
-	  }else{// do nothing
-	  }
-
-}
-
-void uC_timing_operations(global_system_t *const arg_global_system)
-{
-
-
-	uC_cycle_time_op(arg_global_system);
-	  // -------------------------------------------
-	  /*
-	  static uint8_t u8_s_steppermotor_cnt 	=	0; // remembers value
-	  const uint8_t uc_steppermotor_time	=  	1*3;
-
-	  u8_s_steppermotor_cnt++;
-	  arg_global_system->stepper_motor.u8_stepper_motor_time++;
-	  if (u8_s_steppermotor_cnt >= uc_steppermotor_time) // 1*3ms
-	  {
-		  arg_global_system->stepper_motor.u8_stepper_motor_time = 0;
-		  u8_s_steppermotor_cnt = 0;
-		  reset_cycle_count(arg_global_system);
-
-	  }else{// do nothing
-	  }
-	  */
-
-	return;
-}
-
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 
 
   if (htim->Instance == TIM3)
   {
-	  uC_timing_operations(&global_system);
+		increment_cycle_count(&global_system);
   }
   else{
 	  // do nothing
