@@ -199,7 +199,6 @@ void stepper_motor_sequence(uint8_t u8_arg_step_id, global_system_t *const arg_g
 void anitclockwise_movement(global_system_t *const arg_global_system)
 {
 
-
     uint8_t u8_step = 0;
 
     for (u8_step = 0U; u8_step < 8U; u8_step++)
@@ -241,7 +240,6 @@ void system_execution(global_system_t *const arg_global_system)
 		{
 
 			clockwise_movement(arg_global_system);
-
 			break;
 		}
 
@@ -388,7 +386,7 @@ void reset_cycle_count(global_system_t *const arg_global_system)
 void uC_cycle_time_op(global_system_t *const arg_global_system)
 {
 	  static uint8_t u8_s_cyc_cnt 	=	0; // remembers value
-	  const uint8_t uc_cycle_time	=  	100*2;
+	  const uint16_t uc_cycle_time	=  	10*3;
 
 
 	  // -------------------------------------------

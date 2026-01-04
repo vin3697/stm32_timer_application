@@ -20,7 +20,7 @@ int main(void)
   while (1)
   {
 
-	  if(global_system.u8_system_cycle_time != 0)
+	  if(global_system.u8_system_cycle_time == 0)
 	  {
 		  read_sensor_value(&global_system);
 
@@ -39,7 +39,8 @@ int main(void)
 		  send_info_on_bus(&global_system);
 
 		  global_system.last_cycle_mode	= global_system.current_cycle_mode;
-		  HAL_Delay(10);
+
+		  // HAL_Delay(10);
 	  }
 	  else{
 		  // do nothing
