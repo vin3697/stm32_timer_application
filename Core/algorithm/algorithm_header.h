@@ -59,6 +59,7 @@
 		uint16_t 		pin_in4;
 		GPIO_PinState	pin_in4_state;
 
+		uint8_t 			u8_stepper_motor_time;
 
 	}stepper_motor_t;
 
@@ -75,6 +76,8 @@
 		motor_rotation_direction_t	motor_rotation_direction;
 
 		stepper_motor_t		stepper_motor;
+
+		uint8_t 			u8_system_cycle_time;
 
 	}global_system_t;
 
@@ -94,6 +97,10 @@
 	void energize_pins( global_system_t *const arg_global_system);
 	void stepper_motor_sequence(uint8_t u8_arg_step_id, global_system_t *const arg_global_system);
 	void send_info_on_bus( global_system_t *const arg_global_system);
+	void reset_cycle_count(global_system_t *const arg_global_system);
+	void increment_cycle_count(global_system_t *const arg_global_system);
+	void uC_cycle_time_op(global_system_t *const arg_global_system);
+	void uC_timing_operations(global_system_t *const arg_global_system);
 
 
 

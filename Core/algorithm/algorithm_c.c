@@ -43,6 +43,9 @@ void system_init(global_system_t *const arg_global_system)
 	arg_global_system->stepper_motor.pin_in2_state	= GPIO_PIN_RESET;
 	arg_global_system->stepper_motor.pin_in3_state	= GPIO_PIN_RESET;
 	arg_global_system->stepper_motor.pin_in4_state	= GPIO_PIN_RESET;
+	arg_global_system->stepper_motor.u8_stepper_motor_time	= 0;
+
+	arg_global_system->u8_system_cycle_time			= 0;
 
 	return;
 }
@@ -102,6 +105,7 @@ void system_mode_selection(global_system_t *const arg_global_system)
 
 void send_info_on_bus( global_system_t *const arg_global_system)
 {
+
 
 	  HAL_UART_Transmit(&huart3,
 			  	  	  	(uint8_t *)(&arg_global_system->potentiometer.u8_percentage_value),
@@ -202,8 +206,7 @@ void anitclockwise_movement(global_system_t *const arg_global_system)
     {
 
     	stepper_motor_sequence(u8_step, arg_global_system);
-    	HAL_Delay(10);
-
+    	HAL_Delay(3);
     }
 
     return;
@@ -220,8 +223,8 @@ void clockwise_movement(global_system_t *const arg_global_system)
         uint8_t u8_step = 0;
         u8_step			= 7 - u8_step_id;
 
-    	stepper_motor_sequence(u8_step, arg_global_system);
-    	HAL_Delay(10);
+        stepper_motor_sequence(u8_step, arg_global_system);
+    	HAL_Delay(3);
 
     }
 
@@ -365,6 +368,85 @@ void system_mode_operation(global_system_t *const arg_global_system)
 	return;
 }
 
+// -----------------------------------------------------------------------
+
+void increment_cycle_count(global_system_t *const arg_global_system)
+{
+	arg_global_system->u8_system_cycle_time	= 	arg_global_system->u8_system_cycle_time + 1;
+
+	return;
+}
+
+
+void reset_cycle_count(global_system_t *const arg_global_system)
+{
+	arg_global_system->u8_system_cycle_time	= 0;
+
+	return;
+}
+
+void uC_cycle_time_op(global_system_t *const arg_global_system)
+{
+	  static uint8_t u8_s_cyc_cnt 	=	0; // remembers value
+	  const uint8_t uc_cycle_time	=  	100*2;
+
+
+	  // -------------------------------------------
+	  /* 1ms tick */
+	  u8_s_cyc_cnt++;
+	  increment_cycle_count(arg_global_system);
+	  /* every 10ms trigger main task */
+	  if (u8_s_cyc_cnt >= uc_cycle_time) // 10*2ms
+	  {
+
+		  u8_s_cyc_cnt = 0;
+		  reset_cycle_count(arg_global_system);
+
+	  }else{// do nothing
+	  }
+
+}
+
+void uC_timing_operations(global_system_t *const arg_global_system)
+{
+
+
+	uC_cycle_time_op(arg_global_system);
+	  // -------------------------------------------
+	  /*
+	  static uint8_t u8_s_steppermotor_cnt 	=	0; // remembers value
+	  const uint8_t uc_steppermotor_time	=  	1*3;
+
+	  u8_s_steppermotor_cnt++;
+	  arg_global_system->stepper_motor.u8_stepper_motor_time++;
+	  if (u8_s_steppermotor_cnt >= uc_steppermotor_time) // 1*3ms
+	  {
+		  arg_global_system->stepper_motor.u8_stepper_motor_time = 0;
+		  u8_s_steppermotor_cnt = 0;
+		  reset_cycle_count(arg_global_system);
+
+	  }else{// do nothing
+	  }
+	  */
+
+	return;
+}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+
+
+  if (htim->Instance == TIM3)
+  {
+	  uC_timing_operations(&global_system);
+  }
+  else{
+	  // do nothing
+  }
+
+  // Timer for Stepper motor is possible as well
+
+}
 
 // -----------------------------------------------------------------------
 // library functions

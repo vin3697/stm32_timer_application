@@ -20,27 +20,30 @@ int main(void)
   while (1)
   {
 
+	  if(global_system.u8_system_cycle_time != 0)
+	  {
+		  read_sensor_value(&global_system);
 
-	  read_sensor_value(&global_system);
+		  process_sensor_readings(&global_system);
 
-	  process_sensor_readings(&global_system);
+		  system_mode_selection(&global_system);
 
-	  system_mode_selection(&global_system);
+		  global_system.current_cycle_mode	= global_system.system_mode;
 
-	  global_system.current_cycle_mode	= global_system.system_mode;
+		  change_in_mode(&global_system);
 
-	  change_in_mode(&global_system);
+		  system_mode_operation(&global_system);
 
-	  system_mode_operation(&global_system);
+		  system_execution(&global_system);
 
-	  system_execution(&global_system);
+		  send_info_on_bus(&global_system);
 
-	  send_info_on_bus(&global_system);
-
-	  global_system.last_cycle_mode	= global_system.current_cycle_mode;
-
-	  HAL_Delay(100);
-
+		  global_system.last_cycle_mode	= global_system.current_cycle_mode;
+		  HAL_Delay(10);
+	  }
+	  else{
+		  // do nothing
+	  }
 
   }
 

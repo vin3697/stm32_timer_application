@@ -29,6 +29,7 @@ void initialization(void)
 	  MX_GPIO_Init();
 	  MX_ADC1_Init();
 	  MX_TIM3_Init();
+	  HAL_TIM_Base_Start_IT(&htim3);
 	  MX_USART3_UART_Init();
 
 }
@@ -158,7 +159,7 @@ void MX_TIM3_Init(void)
   htim3.Instance = TIM3;
   htim3.Init.Prescaler = 72-1;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 65535;
+  htim3.Init.Period = 1000 - 1;   // 10,00 us = 1 ms
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
