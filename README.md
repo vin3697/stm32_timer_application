@@ -1,209 +1,187 @@
-# STM32 Potentiometer → Mode Control → Stepper Motor + UART Telemetry
 
-A small STM32 HAL project that reads a potentiometer via ADC, maps it to **0–100%**, selects a **system mode** (Inactive / Work / Error), drives **status LEDs**, controls a **4-wire stepper motor** in Work mode, and streams the current percentage via **UART (USART3 @ 115200 baud)**.
-
----
-
-## Table of Contents
-- [Overview](#overview)
-- [How it works](#how-it-works)
-- [Modes & behavior](#modes--behavior)
-- [Stepper motor control](#stepper-motor-control)
-- [UART telemetry](#uart-telemetry)
-- [Project structure](#project-structure)
-- [Build & flash](#build--flash)
-- [Configuration](#configuration)
-- [Hardware notes](#hardware-notes)
-- [Troubleshooting](#troubleshooting)
-- [Next improvements](#next-improvements)
-- [License](#license)
+# 🧠⚡ STM32 “Pot-to-Stepper” Project (HAL)  
+> A tiny embedded creature that reads a potentiometer, decides its mood (inactive/work/error), and spins a stepper motor accordingly.  
+> Built mostly with STM32 HAL, designed to be simple, readable, and easy to extend.
 
 ---
 
-## Overview
+## 🧩 What this code does (in human words)
 
-The firmware runs a simple **superloop** with a fixed cycle time (~100 ms) and performs:
+- ✅ **Reads a potentiometer** via **ADC1**
+- ✅ Converts ADC value (0…4095) → **percentage (0…100)** with safe math
+- ✅ Uses the percentage to choose a **system mode**
+  - **≤ 20%** → `inactive_mode`
+  - **20–80%** → `work_mode`
+  - **≥ 80%** → `error_mode`
+- ✅ In `work_mode`, selects **motor direction** based on thresholds
+  - **30–40%** → clockwise
+  - **60–70%** → anticlockwise
+  - else → motor inactive
+- ✅ Drives a **stepper motor (half-step / 8-step sequence)** on **GPIOF pins PF0..PF3**
+- ✅ Uses **TIM3 interrupt** as a simple “cycle tick” (increments a counter)
+- ✅ Sends a tiny UART “hello” (currently transmits byte `3`) over **USART3**
 
-1. **ADC read** of potentiometer (12-bit: 0…4095)
-2. Convert ADC value → **percentage (0…100)**
-3. Decide **system mode**
-4. Update **LED indication**
-5. In Work mode: decide stepper **direction** from percentage windows
-6. Execute one **8-step half-step** sequence (or stop)
-7. Send percentage via **UART** (binary 1 byte)
+If this were a pet:  
+- Potentiometer = its “food meter”  
+- LEDs = its “mood ring”  
+- Stepper motor = its “legs” 🐾
 
 ---
 
-## How it works
 
-Main cycle (conceptually):
+## ⏱️ Timing model (how the “scheduler” works)
+
+TIM3 as a periodic tick:
+
+* `HAL_TIM_PeriodElapsedCallback()` checks if it was **TIM3**
+* then calls `increment_cycle_count(&global_system)`
+* which increments: `global_system.u8_system_cycle_time++`
+
+In `main.c`, the loop likely checks this counter and runs the algorithm once per “cycle”, then resets it to 0.
+
+So it’s basically a tiny cooperative scheduler:
+
+* ISR: tick++
+* main loop: if tick reached → do work → tick = 0
+
+---
+
+## 🔁 The main workflow (high level)
+
+### Mermaid Flowchart
+
+```mermaid
+flowchart TD
+  A[Boot] --> B[initialization()\nHAL + clocks + GPIO + ADC + TIM3 + UART3]
+  B --> C[system_init(&global_system)]
+  C --> D{Main Loop}
+  D -->|cycle tick reached| E[read_sensor_value()\nADC read]
+  E --> F[process_sensor_readings()\nADC -> %]
+  F --> G[system_mode_selection()\n% -> system_mode]
+  G --> H[system_mode_operation()\nLED + work logic]
+  H --> I[system_execution()\nstepper move or idle]
+  I --> J[send_info_on_bus()\nUART3 byte]
+  J --> K[change_in_mode()\nreset LED on mode change]
+  K --> L[reset cycle counter]
+  L --> D
+  D -->|no tick| D
+```
+
+### ASCII fallback (if Mermaid isn’t supported)
+
+```text
+[ init HAL ] -> [ system_init() ] -> main loop:
+      |
+      +--> if cycle tick:
+              ADC read -> % calc -> mode select -> mode op
+                          -> motor exec -> UART tx -> mode change check
+                          -> reset tick
+```
+
+---
+
+## 🌀 Stepper motor sequence (half-step, 8 states)
+
+`stepper_motor_sequence(step)` uses these patterns:
+
+| Step | Coil pattern |
+| ---: | ------------ |
+|    0 | 1000         |
+|    1 | 1100         |
+|    2 | 0100         |
+|    3 | 0110         |
+|    4 | 0010         |
+|    5 | 0011         |
+|    6 | 0001         |
+|    7 | 1001         |
+
+And then `energize_pins()` writes the states to GPIO.
+
+Direction functions:
+
+* `clockwise_movement()` steps **7 → 0**
+* `anitclockwise_movement()` steps **0 → 7**
+
+---
+
+## 🎛️ Mode logic (the “personality” of the system)
+
+### 1) System mode selection (from pot percentage)
+
+In `system_mode_selection()`:
+
+* **≥ 80%** → `error_mode`
+* **≤ 20%** → `inactive_mode`
+* otherwise → `work_mode`
+
+### 2) Work mode motor direction selection
+
+In `work_mode_operation()`:
+
+* **30–40%** → clockwise (`clock_wise_rotation`)
+* **60–70%** → anticlockwise (`anticlock_wise_rotatin`)
+* else → motor inactive
+
+---
+
+## 🧪 UART “bus” output
+
+`send_info_on_bus()` currently transmits a single byte:
+
+* `tx_uart = 3`
+
+There’s also a commented snippet to transmit the potentiometer percentage.
+If you want telemetry, you can expand this to send a small structured frame like:
 
 ```c
-read_sensor_value(&global_system);
-process_sensor_readings(&global_system);
-system_mode_selection(&global_system);
+[0xAA][percent][mode][direction][CRC]
+```
 
-global_system.current_cycle_mode = global_system.system_mode;
-change_in_mode(&global_system);
-
-system_mode_operation(&global_system);
-system_execution(&global_system);
-send_info_on_bus(&global_system);
-
-global_system.last_cycle_mode = global_system.current_cycle_mode;
-HAL_Delay(100);
-````
-
-All runtime information is stored inside a single global state struct (e.g. `global_system_t`), so each module operates on the same system context.
+(Keeping it simple but “debugger-friendly”.)
 
 ---
 
-## Modes & behavior
-
-Mode selection is based on potentiometer percentage:
-
-* **Inactive mode**: `percent <= 20`
-* **Work mode**: `21 <= percent <= 79`
-* **Error mode**: `percent >= 80`
-
-LED indication (typical mapping in the code):
-
-* **Work**  → `LD1` ON
-* **Inactive** → `LD2` ON
-* **Error** → `LD3` ON
-
-`change_in_mode()` detects transitions (current vs last mode) and clears the previous LED state before the new mode LED is set.
-
-### Work mode motor windows
-
-In Work mode the stepper direction is selected by percentage ranges:
-
-* **30–40%** → Clockwise
-* **60–70%** → Anti-clockwise
-* Otherwise → Motor inactive
-
-(There is also a simple debug variable updated to reflect state changes.)
-
----
-
-## Stepper motor control
-
-The stepper motor is controlled by four GPIO pins (IN1…IN4) using an **8-step half-step** pattern.
-
-Half-step table (simplified):
-
-| Step | IN1 | IN2 | IN3 | IN4 |
-| ---: | :-: | :-: | :-: | :-: |
-|    0 |  1  |  0  |  0  |  0  |
-|    1 |  1  |  1  |  0  |  0  |
-|    2 |  0  |  1  |  0  |  0  |
-|    3 |  0  |  1  |  1  |  0  |
-|    4 |  0  |  0  |  1  |  0  |
-|    5 |  0  |  0  |  1  |  1  |
-|    6 |  0  |  0  |  0  |  1  |
-|    7 |  1  |  0  |  0  |  1  |
-
-Direction:
-
-* Clockwise: step index runs **7 → 0**
-* Anti-clockwise: step index runs **0 → 7**
-
-Timing:
-
-* A short delay (e.g. `HAL_Delay(10)`) is used between micro-steps.
-* The main loop also delays ~100 ms per cycle.
-
-> Note: TIM3 is initialized in the project but stepping is currently performed using delays (blocking). A timer-driven approach is a good next step.
-
----
-
-## UART telemetry
-
-Every loop cycle, the firmware transmits the **percentage** as **one raw byte** (0…100) over USART3 at **115200 baud**.
-
-This is **binary**, not ASCII. If you view it in a normal terminal, it may look like “weird characters”.
-If you want readable output, change the transmit to formatted ASCII like `"42\r\n"`.
-
-
----
-
-## Build & flash
-
-### STM32CubeIDE
+## 🛠️ Build & Flash (typical STM32CubeIDE flow)
 
 1. Open the project in **STM32CubeIDE**
-2. Build the project
-3. Flash using **ST-LINK**
-4. Open a serial monitor:
+2. Build
+3. Flash via ST-Link
+4. Watch LEDs + motor behavior as you rotate the potentiometer
 
-   * Baud: **115200**
-   * 8 data bits, no parity, 1 stop bit (**8N1**)
-
----
-
-## Configuration
-
-You can quickly tune behavior in these areas:
-
-### Mode thresholds
-
-In mode selection logic:
-
-* Inactive threshold: `20`
-* Error threshold: `80`
-
-### Work mode direction windows
-
-In work mode logic:
-
-* CW window: `30..40`
-* CCW window: `60..70`
-
-### Speed
-
-* Reduce/increase micro-step delay (e.g. `HAL_Delay(10)`)
-* Reduce/increase main loop delay (e.g. `HAL_Delay(100)`)
+> If you’re using a Nucleo board, make sure the GPIOF pins are actually available (some boards don’t break out all PF pins).
 
 ---
 
-## Hardware notes
+## 🧯 Troubleshooting
 
-* **Do not drive a stepper motor directly from STM32 GPIO pins.**
-  Use a driver stage such as **ULN2003** (for 28BYJ-48) or a proper stepper driver module (A4988/DRV8825) depending on your motor.
-* Ensure **common GND** between STM32 and driver.
-* Potentiometer should be connected correctly (Vref range), and ADC pin must be configured for analog input.
+* **Motor doesn’t move**
 
----
+  * Check stepper driver wiring + power (separate motor supply often needed)
+  * Confirm PF0..PF3 are configured as outputs in CubeMX
+  * Confirm coil order matches your driver inputs (swap IN pins if direction/steps look wrong)
 
-## Troubleshooting
+* **ADC always reads 0 or max**
 
-* **UART shows garbage**
+  * Check ADC channel pin mapping in CubeMX (`MX_ADC1_Init()`)
+  * Verify pot wiring: 3.3V – wiper – GND
 
-  * You’re sending 1 raw byte. Use a binary-aware viewer, or switch to ASCII formatting.
+* **Timer tick not happening**
 
-* **Stepper not moving**
-
-  * Check driver wiring + enable pins (if applicable)
-  * Confirm GPIO pins configured as outputs
-  * Verify motor supply voltage/current
-
-* **Mode LED never changes**
-
-  * Confirm ADC input changes and percentage calculation is correct
-  * Check threshold values
+  * Ensure `HAL_TIM_Base_Start_IT(&htim3);` is called (it is in `initialization()`)
+  * Confirm TIM3 interrupt enabled in NVIC
 
 ---
 
-## Next improvements
+## 🧾 License
 
-* Replace `HAL_Delay()` stepping with a **timer interrupt** (TIM3) for smoother, non-blocking motor control
-* Add **UART framing** (start byte + payload + checksum) for robust PC parsing
-* Add calibration for ADC min/max if the potentiometer does not reach full scale
-* Add error handling (ADC/UART timeouts, sensor disconnect detection)
+If you don’t have a license yet: choose one (MIT is friendly).
+Otherwise it’s the classic: “works on my desk” 😄
 
 ---
 
+## 👤 Author
 
-### Author
+VIN — January 2026
+(Embedded + HAL + a stepper motor that refuses to be boring.)
 
-Vin
+

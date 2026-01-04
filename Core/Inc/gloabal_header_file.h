@@ -20,6 +20,6 @@
 	extern global_system_t		global_system;
 	extern uint8_t 				g_debug_variable;
 
-	#define CYCLE_TIME_FACTOR	10u
+	#define CYCLE_TIME_FACTOR	1u
 
 #endif /* INC_GLOABAL_HEADER_FILE_H_ */
