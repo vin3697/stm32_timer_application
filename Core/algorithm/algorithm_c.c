@@ -202,14 +202,22 @@ void stepper_motor_sequence(uint8_t u8_arg_step_id, global_system_t *const arg_g
 void anitclockwise_movement(global_system_t *const arg_global_system)
 {
 
-    uint8_t u8_step = 0;
+	static uint8_t u8_s_step = 0;
+	if(u8_s_step >=8)
+	{
+		u8_s_step = 0;
+	}
+	stepper_motor_sequence(u8_s_step, arg_global_system);
+	u8_s_step++;
+
+    /*uint8_t u8_step = 0;
 
     for (u8_step = 0U; u8_step < 8U; u8_step++)
     {
 
     	stepper_motor_sequence(u8_step, arg_global_system);
     	HAL_Delay(3);
-    }
+    }*/
 
     return;
 }
@@ -217,8 +225,15 @@ void anitclockwise_movement(global_system_t *const arg_global_system)
 void clockwise_movement(global_system_t *const arg_global_system)
 {
 
+	static int8_t i8_s_step = 7;
+	if(i8_s_step <= 0)
+	{
+		i8_s_step = 7;
+	}
+	stepper_motor_sequence(i8_s_step, arg_global_system);
+	i8_s_step--;
 
-    uint8_t u8_step_id = 0;
+	/*uint8_t u8_step_id = 0;
 
     for (u8_step_id = 0U; u8_step_id < 8U; u8_step_id++)
     {
@@ -228,7 +243,7 @@ void clockwise_movement(global_system_t *const arg_global_system)
         stepper_motor_sequence(u8_step, arg_global_system);
     	HAL_Delay(3);
 
-    }
+    }*/
 
     return;
 }
