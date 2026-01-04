@@ -4,6 +4,7 @@
 > Built mostly with STM32 HAL, designed to be simple, readable, and easy to extend.
 
 ---
+![UART Demo](media/stm32_demo.gif)
 
 ## 🧩 What this code does (in human words)
 
