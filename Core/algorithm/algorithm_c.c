@@ -364,6 +364,7 @@ void system_mode_operation(global_system_t *const arg_global_system)
 			arg_global_system->led.pin_number	=	LD2_Pin;
 			arg_global_system->led.pin_state	=	GPIO_PIN_SET;
 
+			arg_global_system->motor_rotation_direction	= motor_inactive;
 			break;
 		}
 
@@ -374,6 +375,7 @@ void system_mode_operation(global_system_t *const arg_global_system)
 			arg_global_system->led.pin_number	=	LD3_Pin;
 			arg_global_system->led.pin_state	=	GPIO_PIN_SET;
 
+			arg_global_system->motor_rotation_direction	= motor_inactive;
 			break;
 		}
 
